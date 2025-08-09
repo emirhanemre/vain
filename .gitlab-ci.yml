@@ -1,0 +1,46 @@
+cat > .gitlab-ci.yml << 'EOF'
+# GitLab CI/CD Pipeline Configuration
+# This will run automatically when you push code
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  NODE_VERSION: "18"
+
+# Test Frontend
+test:frontend:
+  stage: test
+  image: node:${NODE_VERSION}
+  script:
+    - cd frontend
+    - npm ci
+    - npm run type-check
+    - npm run test
+  only:
+    - main
+    - merge_requests
+
+# Test Backend  
+test:backend:
+  stage: test
+  image: node:${NODE_VERSION}
+  services:
+    - postgres:13
+  variables:
+    POSTGRES_DB: test_db
+    POSTGRES_USER: test_user
+    POSTGRES_PASSWORD: test_password
+  script:
+    - cd backend
+    - npm ci
+    - npm run type-check
+    - npm run test
+  only:
+    - main
+    - merge_requests
+
+# We'll add build and deploy stages later
+EOF
