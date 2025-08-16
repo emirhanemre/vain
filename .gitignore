@@ -42,4 +42,4 @@ env/
 Thumbs.db
 
 # Node modules (for frontend later)
-node_modules/
+node_modules/__pycache__/
