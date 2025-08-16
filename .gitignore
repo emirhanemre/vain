@@ -43,3 +43,4 @@ Thumbs.db
 
 # Node modules (for frontend later)
 node_modules/__pycache__/
+__pycache__/
