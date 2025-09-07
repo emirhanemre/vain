@@ -24,9 +24,102 @@ interface UserResponse {
 // Returns JWT token after successful login
 interface LoginResponse {
   access_token: string; 
-  token_type: string;   
+  refresh_token: string
+  token_type: string;  
+  expires_in: number; 
 }
 
+// Returns tokens from refresh endpoint
+interface RefreshResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+// Token management functions
+const saveTokens = async (accessToken: string, refreshToken: string) => {
+  try {
+    await AsyncStorage.setItem('access_token', accessToken);
+    await AsyncStorage.setItem('refresh_token', refreshToken);
+    console.log('💾 Both tokens saved to AsyncStorage');
+  } catch (error) {
+    console.error('Error saving tokens:', error);
+  }
+};
+
+const getAccessToken = async (): Promise<string | null> => {
+  try {
+    return await AsyncStorage.getItem('access_token');
+  } catch (error) {
+    console.error('Error getting access token:', error);
+    return null;
+  }
+};
+
+const getRefreshToken = async (): Promise<string | null> => {
+  try {
+    return await AsyncStorage.getItem('refresh_token');
+  } catch (error) {
+    console.error('Error getting refresh token:', error);
+    return null;
+  }
+};
+
+const clearTokens = async () => {
+  try {
+    await AsyncStorage.removeItem('access_token');
+    await AsyncStorage.removeItem('refresh_token');
+    await AsyncStorage.removeItem('authToken'); // Remove old token too
+    console.log('🗑️ All tokens cleared');
+  } catch (error) {
+    console.error('Error clearing tokens:', error);
+  }
+};
+
+// Axios interceptor for automatic token refresh
+axios.interceptors.response.use(
+  (response) => response, // If request succeeds, do nothing
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // If we get 401 and haven't already tried to refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        const refreshToken = await getRefreshToken();
+        
+        if (refreshToken) {
+          console.log('Access token expired, refreshing...');
+          
+          // Call refresh endpoint
+          const refreshResponse = await axios.post<RefreshResponse>(`${API_BASE_URL}/auth/refresh`, {
+            refresh_token: refreshToken
+          });
+          
+          // Save new tokens
+          await saveTokens(
+            refreshResponse.data.access_token, 
+            refreshResponse.data.refresh_token
+          );
+          
+          console.log('Tokens refreshed successfully');
+          
+          // Retry original request with new token
+          originalRequest.headers.Authorization = `Bearer ${refreshResponse.data.access_token}`;
+          return axios(originalRequest);
+        }
+      } catch (refreshError) {
+        console.log('Refresh failed, user needs to login again');
+        await clearTokens();
+        return Promise.reject(refreshError);
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 
 // Points all API calls to your FastAPI backend
@@ -86,29 +179,56 @@ const testLogin = async () => {
   try {
     console.log('Testing user login...');
     
-    // Uses same credentials as registration test
     const loginData = {
       username: "testuser123",
       password: "testpassword123"
     };
     
-    // Sends credentials to login endpoint
     const response = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/login`, loginData);
     console.log('✅ Login Response:', response.data);
-    console.log(`✅ SUCCESS: JWT Token received: ${response.data.access_token.substring(0, 30)}...`);
-  
+    console.log(`✅ ACCESS TOKEN: ${response.data.access_token.substring(0, 30)}...`);
+    console.log(`✅ REFRESH TOKEN: ${response.data.refresh_token.substring(0, 30)}...`);
 
-    // Save JWT token to device storage
-    await AsyncStorage.setItem('authToken', response.data.access_token);
-    console.log('💾 Token saved to AsyncStorage');
+    // Save BOTH tokens
+    await saveTokens(response.data.access_token, response.data.refresh_token);
 
-    // Shows token preview (tokens are very long, so only show first 20 chars)
-    Alert.alert('Success!', `Login successful! Token received: ${response.data.access_token.substring(0, 20)}...`);
+    Alert.alert('Success!', 
+      `Login successful!\nBoth tokens saved!\nAccess: ${response.data.access_token.substring(0, 20)}...`
+    );
   } catch (error: any) {
-    // Shows authentication errors (wrong password, user not found, etc.)
     console.log('❌ Login Error:', error.response?.data || error.message);
-    console.log('❌ FAILED: Login error');
     Alert.alert('Login Failed', error.response?.data?.detail || 'Login error');
+  }
+};
+
+// Test automatic token refresh
+const testAutoRefresh = async () => {
+  try {
+    console.log('Testing automatic token refresh...');
+    
+    // First, login to get tokens
+    await testLogin();
+    
+    // Get the access token and modify it to be "expired" 
+    const accessToken = await getAccessToken();
+    if (accessToken) {
+      // Save an obviously invalid token to trigger 401
+      await AsyncStorage.setItem('access_token', 'invalid_token_to_trigger_refresh');
+      console.log('🔄 Set invalid access token to trigger refresh');
+      
+      // Make an API call that requires authentication (this should trigger refresh)
+      const response = await axios.get(`${API_BASE_URL}/healthz`, {
+        headers: {
+          Authorization: `Bearer invalid_token`
+        }
+      });
+      
+      console.log('✅ Auto-refresh should have happened!');
+      Alert.alert('Success!', 'Automatic token refresh working!');
+    }
+  } catch (error: any) {
+    console.log('❌ Auto-refresh test error:', error.response?.data || error.message);
+    Alert.alert('Auto-refresh Test', 'Check console for details');
   }
 };
 
@@ -162,6 +282,7 @@ function TestingScreen({ navigation }: any) {
         <Button title="4. Check Saved Token" onPress={checkSavedToken} />
         <Button title="5. Test Logout" onPress={testLogout} />
         <Button title="6. Go to Login Screen" onPress={() => navigation.navigate('Login')} />
+        <Button title="7. Test Auto-Refresh" onPress={testAutoRefresh} />
 
       </View>
     </View>

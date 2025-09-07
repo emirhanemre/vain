@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 from app.schemas import UserCreate, UserResponse, Token, UserLogin
-from app.auth import get_password_hash, verify_password, create_access_token
+from app.auth import get_password_hash, verify_password, create_access_token, create_token_pair, verify_token
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -34,6 +34,8 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     
     return new_user
 
+
+
 @router.post("/login", response_model=Token)
 def login(user_data: UserLogin, db: Session = Depends(get_db)):
     # Find user by username
@@ -46,7 +48,51 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Create access token
-    access_token = create_access_token(data={"sub": str(user.id)})
+    # Create BOTH access and refresh tokens using new function
+    tokens = create_token_pair(user.id)    
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    return tokens  # Returns both access_token and refresh_token
+
+
+
+@router.post("/refresh", response_model=Token)
+def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
+    # Verify refresh token
+    payload = verify_token(refresh_token, token_type="refresh")
+    
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Get user ID from token (remember: your tokens contain user.id as "sub")
+    user_id_str = payload.get("sub")
+
+    if user_id_str is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload"
+        )
+
+    # Convert string back to integer
+    try:
+        user_id = int(user_id_str)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user ID in token"
+        )
+    # Verify user still exists in database
+    user = db.query(User).filter(User.id == user_id).first()  
+    if not user:
+        raise HTTPException(    
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+    
+    # Create new token pair
+    new_tokens = create_token_pair(user.id)
+    
+    return new_tokens
