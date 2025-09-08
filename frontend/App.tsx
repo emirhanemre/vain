@@ -237,14 +237,15 @@ const testAutoRefresh = async () => {
 const checkSavedToken = async () => {
   try {
     console.log('🔍 Checking for saved authentication token...');
-    const savedToken = await AsyncStorage.getItem('authToken');
+    const accessToken = await getAccessToken();
+    const refreshToken = await getRefreshToken();
     
-    if (savedToken) {
-      console.log('✅ Found saved token:', savedToken.substring(0, 30) + '...');
+    if (accessToken && refreshToken) {
+      console.log('✅ Found both tokens:', accessToken.substring(0, 30) + '...');
       console.log('🎉 User is already logged in!');
       return true; // User is logged in
     } else {
-      console.log('❌ No saved token found - user needs to log in');
+      console.log('❌ No saved tokens found - user needs to log in');
       return false; // User needs to log in
     }
   } catch (error) {
@@ -256,8 +257,9 @@ const checkSavedToken = async () => {
 // Add this function to clear the saved token
 const testLogout = async () => {
   try {
-    await AsyncStorage.removeItem('authToken');
-    console.log('🗑️ Token removed - user logged out');
+    await clearTokens();
+    console.log('🗑️ All tokens removed - user logged out');
+    Alert.alert('Success!', 'Logged out successfully!');
   } catch (error) {
     console.error('Error removing token:', error);
   }
@@ -305,8 +307,8 @@ const LoginScreen = ({ navigation }: any) => {
     try {
       const response = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/login`, data);
       
-      await AsyncStorage.setItem('authToken', response.data.access_token);
-      console.log('Login successful, token saved');
+      await saveTokens(response.data.access_token, response.data.refresh_token);
+      console.log('Login successful, both tokens saved');
       
       Alert.alert('Success!', 'Logged in successfully!');
     } catch (error: any) {
