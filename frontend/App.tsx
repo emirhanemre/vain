@@ -8,6 +8,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
+import CreateScreen from './screens/CreateScreen';
+import CustomHeader from './components/CustomHeader';
+
 // Define expected structure of API responses for TypeScript validation
 interface HealthResponse {
   status: string;   
@@ -376,30 +379,6 @@ const LoginScreen = ({ navigation }: any) => {
 };
 
 
-function CustomHeader() {
-  return (
-    <View style={styles.topHeader}>
-      <TouchableOpacity 
-        style={styles.headerButton}
-        onPress={() => console.log('Menu pressed!')}
-      >
-        <Text>☰</Text>
-      </TouchableOpacity>
-
-      <View style={styles.logoContainer}>
-        <View style={styles.logoSquare}></View>
-      </View>
-
-      <TouchableOpacity 
-        style={styles.headerButton}
-        onPress={() => console.log('Messages pressed!')}
-      >
-        <Text>💬</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
 
 function HomeScreen() {
   return (
@@ -413,59 +392,6 @@ function HomeScreen() {
   );
 }
 
-function CreateScreen() {
-  const [expandedSection, setExpandedSection] = useState(null);
-
-  const toggleSection = (section) => {
-    setExpandedSection(expandedSection === section ? null : section);
-  };
-
-  return (
-    <View style={styles.screenContainer}>
-      <CustomHeader />
-      <View style={styles.topContent}>
-        <Text style={styles.title}>Create</Text>
-        
-        {/* Character Section */}
-        <TouchableOpacity 
-          style={styles.sectionHeader} 
-          onPress={() => toggleSection('character')}
-        >
-          <Text style={styles.sectionTitle}>Create Character</Text>
-          <Text>{expandedSection === 'character' ? '▼' : '▶'}</Text>
-        </TouchableOpacity>
-        
-        {expandedSection === 'character' && (
-          <View style={styles.sectionContent}>
-            <View style={styles.previewContainer}>
-              <Text style={styles.previewPlaceholder}>Character preview</Text>
-            </View>
-            <TextInput 
-              style={styles.characterInput}
-              placeholder="Describe your character..."
-              multiline={true}
-            />
-          </View>
-        )}
-
-        {/* Video Section */}
-        <TouchableOpacity 
-          style={styles.sectionHeader} 
-          onPress={() => toggleSection('video')}
-        >
-          <Text style={styles.sectionTitle}>Generate Video</Text>
-          <Text>{expandedSection === 'video' ? '▼' : '▶'}</Text>
-        </TouchableOpacity>
-        
-        {expandedSection === 'video' && (
-          <View style={styles.sectionContent}>
-            <Text>Video generation options will go here</Text>
-          </View>
-        )}
-      </View>
-    </View>
-  );
-}
 
 function ProfileScreen() {
   return (
@@ -495,8 +421,8 @@ function MainApp() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
       <Tab.Screen name="Testing" component={TestingScreen} />
-      <Tab.Screen name="Create" component={CreateScreen} />
       <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Create" component={CreateScreen} />
       <Tab.Screen name="Search" component={SearchScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
 
@@ -560,14 +486,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  topHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
 
   screenContainer: {
     flex: 1,
@@ -579,85 +497,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   
-  topContent: {
-    flex: 1,
-    alignItems: 'center',
-    paddingTop: 20,
+  inputContainer: {
+    width: '90%',
+    marginBottom: 20,
   },
 
-  logoContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,           // Makes it circular (half of width/height)
-    backgroundColor: '#000', 
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoSquare: {
-    width: 32,
-    height: 32 ,
-    backgroundColor: '#000',     // Black square
-    borderRadius: 3,
-  },
-
-previewContainer: {
-  width: '100%',
-  height: 200,
-  backgroundColor: '#f5f5f5',
-  borderRadius: 12,
-  justifyContent: 'center',
-  alignItems: 'center',
-  marginBottom: 20,
-  borderWidth: 1,
-  borderColor: '#ddd',
-},
-previewPlaceholder: {
-  color: '#999',
-  fontSize: 16,
-},
-inputContainer: {
-  width: '90%',
-  marginBottom: 20,
-},
-characterInput: {
-  height: 100,
-  borderWidth: 1,
-  borderColor: '#ddd',
-  borderRadius: 12,
-  padding: 15,
-  fontSize: 16,
-  textAlignVertical: 'top',
-},
-
-sectionHeader: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  padding: 15,
-  backgroundColor: '#f8f8f8',
-  borderRadius: 8,
-  marginBottom: 10,
-  width: '90%',
-},
-sectionTitle: {
-  fontSize: 18,
-  fontWeight: 'bold',
-},
-sectionContent: {
-  width: '90%',
-  padding: 15,
-  backgroundColor: '#fff',
-  borderRadius: 8,
-  marginBottom: 20,
-  borderWidth: 1,
-  borderColor: '#ddd',
-},
-
-headerButton: {
-  width: 30,
-  height: 30,
-  justifyContent: 'center',
-  alignItems: 'center',
-},
 
 });
