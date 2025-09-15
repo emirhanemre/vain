@@ -10,10 +10,26 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+allow_origins=[
+        # Development origins
+        "http://localhost:3000",           # FastAPI server
+        "http://127.0.0.1:3000",            # Alternative localhost
+        "http://localhost:8081",           # Expo development server
+        "http://localhost:19006",          # Expo web server (alternative)
+        
+        # Future production origins (update when deployed)
+        # "https://your-app-name.vercel.app",
+        # "https://your-backend.herokuapp.com",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Authorization",      # For JWT tokens
+        "Content-Type",       # For JSON requests
+        "Accept",            # Standard header
+        "Origin",            # CORS header
+        "X-Requested-With",  # AJAX requests
+    ],
 )
 
 # Include authentication routes
