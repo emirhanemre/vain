@@ -47,7 +47,7 @@ This project explores building a specialized social platform that makes AI conte
 
 ### Infrastructure Planning
 - **Containerization:** Docker for environment parity & deployment consistency  
-- **CI/CD:** GitLab pipelines for automated tests & deploys  
+- **CI/CD:** GitHub pipelines for automated tests & deploys  
 - **Monitoring:** CloudWatch & Sentry for metrics and errors  
 - **Security:** Rate limiting, CORS, and input validation
 
