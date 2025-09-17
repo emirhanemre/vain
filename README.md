@@ -1,6 +1,8 @@
 
 ⚠️ Status: Work in Progress (early development – authentication and schema design in progress; features below represent roadmap)
+
 🚧 Active development takes place on the dev branch.
+
 
 ---
 
