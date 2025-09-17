@@ -1,14 +1,16 @@
+---
+
+⚠️ Status: Work in Progress (early development – authentication and schema design in progress; features below represent roadmap)
+
+---
+
 # vAIn
 
 *An AI-powered social media platform focused on democratizing AI content creation through character personas.*
 
 Users create AI characters with distinct personalities to produce and share video content, establishing a dedicated hub for AI-generated media and creative expression.
 
----
 
-⚠️ Status: Work in Progress (early development – authentication and schema design in progress; features below represent roadmap)
-
----
 
 ## Project Overview
 
